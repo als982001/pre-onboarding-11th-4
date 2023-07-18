@@ -12,35 +12,18 @@ export default function useDatas() {
 
   const navigate = useNavigate();
 
-  /*
-  const getDatasWithFilter = async (keyword: string) => {
-    const datasByKeyword = allDatas.filter((data) =>
-      data.sickNm.includes(keyword)
-    );
-
-    setDatas((prev) => datasByKeyword);
-    setSelectedIdx(-1);
-  };
-  */
-
   const getCacheData = async (keyword: string) => {
     if (keyword.length === 0) return;
 
     if (cache[keyword] === undefined) {
-      // console.log(`${keyword} 없음...`);
       await setCache(keyword);
     } else if (cache[keyword].expireTime <= Date.now()) {
-      // console.log(`${keyword} 끝났음...`);
-
       delete cache.keyword;
       await setCache(keyword);
     }
 
     setDatas((prev) => cache[keyword].datas);
     setSelectedIdx((prev) => -1);
-
-    // console.log(cache);
-    // console.log("\n");
   };
 
   const changeSelectedIdx = (key: string) => {

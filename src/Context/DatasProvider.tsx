@@ -15,27 +15,9 @@ const SEC = 1000; // 1초
 const cacheExpireTime = 60 * SEC; // 1분
 
 export function DatasProvider({ children }: IProps) {
-  // const [allDatas, setAllDatas] = useState<IData[]>([]);
   const [datasByKeyword, setDatasByKeyword] = useState<IData[]>([]);
   const [recentKeywords, setRecentKeywords] = useState<string[]>([]);
   const cache: ICache = {};
-
-  /*
-  useEffect(() => {
-    (async () => {
-      const response = await getDatas();
-      setAllDatas(response);
-    })();
-  }, []);
-  */
-
-  /*
-  const setCache = async (keyword: string) => {
-    const datas = await getDatasByKeyword(keyword);
-
-    cache[keyword] = { datas, expireTime: Date.now() + cacheExpireTime };
-  };
-*/
 
   const setCache = useCallback(
     async (keyword: string) => {
@@ -59,8 +41,6 @@ export function DatasProvider({ children }: IProps) {
   return (
     <DatasContext.Provider
       value={{
-        /*         allDatas: allDatas,
-        setAllDatas: setAllDatas, */
         datasByKeyword,
         setDatasByKeyword,
         cache,
