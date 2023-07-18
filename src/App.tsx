@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { styled } from "styled-components";
 import { FaMagnifyingGlass } from "react-icons/fa6";
 import useDatas from "./Hooks/useDatas";
@@ -83,7 +83,6 @@ const Results = styled.section<{ opacity: number }>`
   overflow: scroll;
   margin-top: 5px;
   opacity: ${(props) => props.opacity};
-  opacity: 1;
   box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
 
   &::-webkit-scrollbar {
@@ -116,6 +115,17 @@ function App() {
 
   const navigate = useNavigate();
 
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const selectedElement =
+      resultsRef.current?.childNodes[1].childNodes[selectedIdx + 1];
+
+    if (selectedElement instanceof HTMLElement) {
+      selectedElement.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [selectedIdx]);
+
   return (
     <Container>
       <Title>국내 모든 임상시험 검색하고 온라인으로 참여하기</Title>
@@ -131,7 +141,7 @@ function App() {
           onFocus={handleInputActive}
           onBlur={handleInputInactive}
         />
-        <Results opacity={inputActive ? 1 : 0}>
+        <Results opacity={inputActive ? 1 : 0} ref={resultsRef}>
           {keyword.length === 0 ? (
             <RecentKeywords />
           ) : (

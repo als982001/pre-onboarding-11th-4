@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { DatasContext } from "./Contexts";
 import { getDatasByKeyword } from "../Functions/functions";
+import Keyword from "../Components/Keyword";
 
 interface ICache {
   [key: string]: { datas: IData[]; expireTime: number };
@@ -28,18 +29,32 @@ export function DatasProvider({ children }: IProps) {
   }, []);
   */
 
+  /*
   const setCache = async (keyword: string) => {
     const datas = await getDatasByKeyword(keyword);
 
     cache[keyword] = { datas, expireTime: Date.now() + cacheExpireTime };
   };
+*/
 
-  const pushRecentKeyword = (keyword: string) => {
-    if (recentKeywords.includes(keyword) === false) {
-      const newRecentKeywords = [...recentKeywords, keyword];
-      setRecentKeywords(newRecentKeywords);
-    }
-  };
+  const setCache = useCallback(
+    async (keyword: string) => {
+      const datas = await getDatasByKeyword(keyword);
+
+      cache[keyword] = { datas, expireTime: Date.now() + cacheExpireTime };
+    },
+    [Keyword]
+  );
+
+  const pushRecentKeyword = useCallback(
+    (keyword: string) => {
+      if (recentKeywords.includes(keyword) === false) {
+        const newRecentKeywords = [...recentKeywords, keyword];
+        setRecentKeywords(newRecentKeywords);
+      }
+    },
+    [Keyword]
+  );
 
   return (
     <DatasContext.Provider

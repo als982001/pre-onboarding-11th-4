@@ -27,8 +27,6 @@ export default function Keyword({ sickNm, selected }: IProps) {
   const navigate = useNavigate();
   const { pushRecentKeyword } = useDataState();
 
-  console.log(`${sickNm} => ${sickNm.length}`);
-
   return (
     <Container
       selected={selected}
