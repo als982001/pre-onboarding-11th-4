@@ -18,7 +18,7 @@
 
 # 배포
 
-### [원티드 프리온보딩 인턴십 3주차 과제 - 13팀 배포 링크](https://pre-onboarding-11th-3-13.vercel.app/)
+### [원티드 프리온보딩 인턴십 4주차 과제 배포 링크]("/")
 
 <br/>
 
@@ -27,7 +27,7 @@
 1. 프로젝트 clone
 
 ```bash
-$ git clone https://github.com/몰루
+$ git clone https://github.com/als982001/pre-onboarding-11th-4
 ```
 
 2. 프로젝트 directory로 이동
