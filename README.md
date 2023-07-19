@@ -2,6 +2,10 @@
 
 <br/>
 
+![4주차 과제 시연영상](./public/week4_jaemin.gif.gif)
+
+<br />
+
 # 목차
 
 [1. 배포](#배포)
