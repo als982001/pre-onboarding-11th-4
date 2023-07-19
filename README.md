@@ -18,7 +18,7 @@
 
 # 배포
 
-### [원티드 프리온보딩 인턴십 4주차 과제 배포 링크]("http://pre-onboarding-11th-4-jaemin.s3-website.ap-northeast-2.amazonaws.com/")
+### [원티드 프리온보딩 인턴십 4주차 과제 배포 링크](http://pre-onboarding-11th-4-jaemin.s3-website.ap-northeast-2.amazonaws.com/)
 
 <br/>
 
