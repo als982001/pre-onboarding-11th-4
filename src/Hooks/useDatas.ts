@@ -8,21 +8,26 @@ export default function useDatas() {
   const [datas, setDatas] = useState<IData[]>([]);
   const [selectedIdx, setSelectedIdx] = useState<number>(-1);
 
-  const { cache, setCache, pushRecentKeyword } = useDataState();
+  const { setCachedData, getCachedData, removeCachedData, pushRecentKeyword } =
+    useDataState();
 
   const navigate = useNavigate();
 
-  const getCacheData = async (keyword: string) => {
+  const getCacheDataByKeyword = async (keyword: string) => {
     if (keyword.length === 0) return;
 
-    if (cache[keyword] === undefined) {
-      await setCache(keyword);
-    } else if (cache[keyword].expireTime <= Date.now()) {
-      delete cache.keyword;
-      await setCache(keyword);
+    let cachedData = await getCachedData(keyword);
+
+    if (cachedData === null) {
+      await setCachedData(keyword);
+    } else if (cachedData.expireTime <= Date.now()) {
+      removeCachedData(keyword);
+      await setCachedData(keyword);
     }
 
-    setDatas((prev) => cache[keyword].datas);
+    cachedData = await getCachedData(keyword);
+
+    setDatas((prev) => cachedData.datas);
     setSelectedIdx((prev) => -1);
   };
 
@@ -63,7 +68,7 @@ export default function useDatas() {
     keyword,
     setKeyword,
     datas,
-    getCacheData,
+    getCacheDataByKeyword,
     selectedIdx,
     checkInputKeydown,
   };

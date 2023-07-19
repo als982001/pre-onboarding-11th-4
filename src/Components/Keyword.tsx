@@ -1,6 +1,6 @@
 import { styled } from "styled-components";
 import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import useDataState from "../Context/useDataState";
 
 interface IProps {

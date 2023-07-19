@@ -1,8 +1,6 @@
 import { styled } from "styled-components";
 import Keyword from "./Keyword";
 import useDataState from "../Context/useDataState";
-import useDatas from "../Hooks/useDatas";
-import { useEffect, useState } from "react";
 
 const RecentKeywordTitle = styled.h3`
   width: 100%;

@@ -105,7 +105,7 @@ function App() {
     keyword,
     setKeyword,
     datas,
-    getCacheData,
+    getCacheDataByKeyword,
     selectedIdx,
     checkInputKeydown,
   } = useDatas();
@@ -135,7 +135,7 @@ function App() {
           value={keyword}
           onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
             setKeyword(event.target.value);
-            getCacheData(event.target.value);
+            getCacheDataByKeyword(event.target.value);
           }}
           onKeyDown={checkInputKeydown}
           onFocus={handleInputActive}
