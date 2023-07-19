@@ -18,7 +18,7 @@
 
 # 배포
 
-### [원티드 프리온보딩 인턴십 4주차 과제 배포 링크]("/")
+### [원티드 프리온보딩 인턴십 4주차 과제 배포 링크]("http://pre-onboarding-11th-4-jaemin.s3-website.ap-northeast-2.amazonaws.com/")
 
 <br/>
 
@@ -82,9 +82,15 @@ export async function getDatasByKeyword(keyword: string) {
   try {
     const response = await axios.get(`${BASE_URL}?q=${keyword}`);
     return response.data;
-  } catch (error) {
-    console.log(error);
-    return [];
+  } catch (error: any) {
+    if (error.message === NETWORK_ERROR) {
+      console.log("서버와 연결되어 있지 않기 때문에 로컬 데이터를 이용합니다.");
+    } else {
+      console.log("에러가 발생해 로컬 데이터를 이용합니다.");
+    }
+
+    const filtered = db.filter((data) => data.sickNm.includes(keyword));
+    return filtered;
   }
 }
 ```
@@ -92,10 +98,9 @@ export async function getDatasByKeyword(keyword: string) {
 ```ts
 // src/Context/DatasProvider.tsx
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { DatasContext } from "./Contexts";
 import { getDatasByKeyword } from "../Functions/functions";
-import Keyword from "../Components/Keyword";
 
 interface ICache {
   [key: string]: { datas: IData[]; expireTime: number };
@@ -105,40 +110,78 @@ interface IProps {
   children: React.ReactNode;
 }
 
+const CACHE = "cache";
 const SEC = 1000; // 1초
 const cacheExpireTime = 60 * SEC; // 1분
 
 export function DatasProvider({ children }: IProps) {
   const [datasByKeyword, setDatasByKeyword] = useState<IData[]>([]);
   const [recentKeywords, setRecentKeywords] = useState<string[]>([]);
-  const cache: ICache = {};
+  // const cache: ICache = {};
 
-  const setCache = useCallback(
-    async (keyword: string) => {
-      const datas = await getDatasByKeyword(keyword);
+  const setCachedData = async (keyword: string) => {
+    const datas = await getDatasByKeyword(keyword);
+    const keywordData = { datas, expireTime: Date.now() + cacheExpireTime };
 
-      cache[keyword] = { datas, expireTime: Date.now() + cacheExpireTime };
-    },
-    [Keyword]
-  );
+    let localStorageCache = localStorage.getItem(CACHE);
 
-  const pushRecentKeyword = useCallback(
-    (keyword: string) => {
-      if (recentKeywords.includes(keyword) === false) {
-        const newRecentKeywords = [...recentKeywords, keyword];
-        setRecentKeywords(newRecentKeywords);
+    if (localStorageCache) {
+      let cache = JSON.parse(localStorageCache);
+      cache[keyword] = keywordData;
+
+      localStorage.setItem(CACHE, JSON.stringify(cache));
+    } else {
+      const cache: ICache = {};
+      cache[keyword] = keywordData;
+
+      localStorage.setItem(CACHE, JSON.stringify(cache));
+    }
+  };
+
+  const getCachedData = async (keyword: string) => {
+    let localStorageCache = localStorage.getItem(CACHE);
+
+    if (localStorageCache) {
+      let cache: ICache = JSON.parse(localStorageCache);
+      const keyExists = cache.hasOwnProperty(keyword);
+
+      if (keyExists) {
+        return cache[keyword];
+      } else {
+        return null;
       }
-    },
-    [Keyword]
-  );
+    } else {
+      return null;
+    }
+  };
+
+  const removeCachedData = async (keyword: string) => {
+    let localStorageCache = localStorage.getItem(CACHE);
+
+    if (localStorageCache) {
+      let cache: ICache = JSON.parse(localStorageCache);
+
+      delete cache.keyword;
+
+      localStorage.setItem(CACHE, JSON.stringify(cache));
+    }
+  };
+
+  const pushRecentKeyword = (keyword: string) => {
+    if (recentKeywords.includes(keyword) === false) {
+      const newRecentKeywords = [...recentKeywords, keyword];
+      setRecentKeywords(newRecentKeywords);
+    }
+  };
 
   return (
     <DatasContext.Provider
       value={{
         datasByKeyword,
         setDatasByKeyword,
-        cache,
-        setCache,
+        setCachedData,
+        getCachedData,
+        removeCachedData,
         recentKeywords,
         pushRecentKeyword,
       }}
@@ -162,21 +205,26 @@ export default function useDatas() {
   const [datas, setDatas] = useState<IData[]>([]);
   const [selectedIdx, setSelectedIdx] = useState<number>(-1);
 
-  const { cache, setCache, pushRecentKeyword } = useDataState();
+  const { setCachedData, getCachedData, removeCachedData, pushRecentKeyword } =
+    useDataState();
 
   const navigate = useNavigate();
 
-  const getCacheData = async (keyword: string) => {
+  const getCacheDataByKeyword = async (keyword: string) => {
     if (keyword.length === 0) return;
 
-    if (cache[keyword] === undefined) {
-      await setCache(keyword);
-    } else if (cache[keyword].expireTime <= Date.now()) {
-      delete cache.keyword;
-      await setCache(keyword);
+    let cachedData = await getCachedData(keyword);
+
+    if (cachedData === null) {
+      await setCachedData(keyword);
+    } else if (cachedData.expireTime <= Date.now()) {
+      removeCachedData(keyword);
+      await setCachedData(keyword);
     }
 
-    setDatas((prev) => cache[keyword].datas);
+    cachedData = await getCachedData(keyword);
+
+    setDatas((prev) => cachedData.datas);
     setSelectedIdx((prev) => -1);
   };
 
@@ -217,7 +265,7 @@ export default function useDatas() {
     keyword,
     setKeyword,
     datas,
-    getCacheData,
+    getCacheDataByKeyword,
     selectedIdx,
     checkInputKeydown,
   };
@@ -228,16 +276,16 @@ export default function useDatas() {
 
 - API 호출별로 로컬 캐싱을 구하는 것이 목표였으나, 이용할 수 있는 것은 `GET /sick?q=keyword` 하나였기에 키워드에 따른 데이터를 전부 저장하기로 하였습니다.
 - `getDatasByKeyword`는 요구사항에 의해 `console.info("calling api")`를 우선 실행한 후 keyword에 따른 데이터를 받아옵니다.
-- DatasProvider.tsx의 datasByKeyword는 화면에 렌더링할, 키워드에 따른 데이터들이며 cache는 캐싱 기능을 구현하기 위한 객체입니다.
-- 그리고 입력창에 단어가 변경될 때마다 `getCacheData`가 실행이 됩니다.
-- `getCacheData`가 하는 일은 이렇습니다. 만약 keyword에 해당하는 데이터가 만료되었거나 데이터가 없을 경우, setCache를 통해 keyword에 따른 데이터를 저장합니다. 그리고 데이터를 반환합니다.
+- 로컬 스토리지를 이용하여 캐싱을 구현하였습니다. `DatasProvider.tsx`의 `setCachedData`는 keyword에 따른 데이터를 캐싱하는 함수이며 `getCachedData`는 keyword에 따른 캐싱된 데이터를 받아오는 함수입니다.
+- 그리고 입력창에 단어가 변경될 때마다 `getCacheDataByKeyword`가 실행이 됩니다.
+- `getCacheDataByKeyword`가 하는 일은 이렇습니다. 만약 keyword에 해당하는 데이터가 만료되었거나 데이터가 없을 경우, `setCachedData`, `getCachedData` 통해 keyword에 따른 데이터를 저장합니다. 그리고 데이터를 반환합니다.
 
 <br />
 
 ### 입력마다 API 호출하지 않도록 API 호출 횟수를 줄이는 전략 수립 및 실행
 
 - 입력마다 API를 호출하는 횟수를 줄이기 위해 캐싱을 구현하였습니다.
-- 처음에는 `http://localhost:4000/sick`에 `GET`을 통해 모든 데이터를 가져온 후, `filter`를 이용하려 했으나, 이는 과제가 의도한 바와는 다르다 생각했습니다.
+- 처음에는 `http://localhost:4000/sick`에 `GET`을 통해 모든 데이터를 가져온 후, `filter`를 이용한다면 딱 한 번만 API를 호출하면 되지만 이는 과제가 의도한 바와는 다르다 생각했습니다.
 - 그리고 각 단어마다 적어도 한 번은 API를 호출해야 합니다. 예를 들어, `손`을 검색할 경우, `ㅅ, 소, 손`에 해당하는 데이터를 받아와야 합니다.
 - 그래서 모든 keyword(단어)마다의 데이터를 캐싱하였습니다.
 - 예를 들어, `손`을 검색할 경우 cache에는 `ㅅ, 소, 손`을 key로 가지는 value(데이터 배열)이 존재합니다.
@@ -283,5 +331,6 @@ useEffect(() => {
 
 # 회고
 
-- 다른 프리온보딩 과제에서도 그랬지만, 그동안 배웠던 것을 적용해보기 위해 노력했었습니다. 특히 메모에지에션 기법을 적용한 최적화를 적용해보고 싶었습니다. 그래서 DatasProvider의 함수들에 useCallback을 적용하여 동등성을 보장하려 했습니다. 하지만 이번 코드는 그렇게 복잡한 코드가 아니었기에 쉽게 적용한 것일 수도 있고, 시니어 프로그래머 분들이 보시기에는 더 개선할 점이 많을 수도 있습니다. 그렇기에 더더욱 연습이 필요하다 생각합니다.
+- 프로젝트를 통해 캐싱의 중요성을 깨달았고, 캐싱을 구현하면서 성능과 사용자 경험을 향상시킬 수 있다는 것을 배웠습니다.
+- API 호출을 최적화하는 방법을 고민하고 구현함으로써 서버의 부하를 줄이고 더 효율적으로 데이터를 관리할 수 있었습니다. 이를 통해 웹 애플리케이션의 성능을 개선하는 방법에 대해 이해할 수 있었습니다.
 - 뭐든지 하면 적응이 되고 실력이 는다고 합니다. 타입스크립트도 계속 사용하니 손에 익는 것 같습니다. 예를 들자면 저번에는 Context의 default value의 타입을 지정하는 것이 어려워 any로 처리하고 다른 것들도 Context에 적용하고 싶었는데 타입을 몰라 포기했었습니다. 하지만 이번에는 적용하고 싶은 것은 모두 적용했습니다. 점점 실력이 늘어나는 것 같아 뿌듯합니다.
