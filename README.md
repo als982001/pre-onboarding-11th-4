@@ -2,7 +2,7 @@
 
 <br/>
 
-![4주차 과제 시연영상](./public/week4_jaemin.gif.gif)
+![4주차 과제 시연영상](./week4_jaemin.gif.gif)
 
 <br />
 
